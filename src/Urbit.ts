@@ -79,6 +79,11 @@ export class Urbit {
   private abort = new AbortController();
 
   /**
+   * Fetch implementation to use. Defaults to globally available fetch.
+   */
+  fetch = fetch;
+
+  /**
    * Identity of the ship we're connected to
    */
   ship?: string | null;
@@ -209,7 +214,7 @@ export class Urbit {
       return Promise.resolve();
     }
 
-    const nameResp = await fetch(`${this.url}/~/host`, {
+    const nameResp = await this.fetch(`${this.url}/~/host`, {
       method: 'get',
       credentials: 'include',
     });
@@ -226,7 +231,7 @@ export class Urbit {
       return Promise.resolve();
     }
 
-    const nameResp = await fetch(`${this.url}/~/name`, {
+    const nameResp = await this.fetch(`${this.url}/~/name`, {
       method: 'get',
       credentials: 'include',
     });
@@ -303,6 +308,7 @@ export class Urbit {
       }
       fetchEventSource(this.channelUrl, {
         ...this.fetchOptions,
+        fetch: this.fetch,
         openWhenHidden: true,
         responseTimeout: 25000,
         onopen: async (response, isReconnect) => {
@@ -505,7 +511,7 @@ export class Urbit {
   }
 
   private async sendJSONtoChannel(...json: Message[]): Promise<void> {
-    const response = await fetch(this.channelUrl, {
+    const response = await this.fetch(this.channelUrl, {
       ...this.fetchOptions,
       method: 'PUT',
       body: JSON.stringify(json),
@@ -677,7 +683,7 @@ export class Urbit {
     if (isBrowser) {
       navigator.sendBeacon(this.channelUrl, body);
     } else {
-      const response = await fetch(this.channelUrl, {
+      const response = await this.fetch(this.channelUrl, {
         ...this.fetchOptions,
         method: 'POST',
         body: body,
@@ -706,7 +712,7 @@ export class Urbit {
    */
   async scry<T = any>(params: Scry): Promise<T> {
     const { app, path } = params;
-    const response = await fetch(
+    const response = await this.fetch(
       `${this.url}/~/scry/${app}${path}.json`,
       this.fetchOptions
     );
@@ -739,7 +745,7 @@ export class Urbit {
     if (!desk) {
       throw new Error('Must supply desk to run thread from');
     }
-    const res = await fetch(
+    const res = await this.fetch(
       `${this.url}/spider/${desk}/${inputMark}/${threadName}/${outputMark}.json`,
       {
         ...this.fetchOptions,
